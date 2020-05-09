@@ -5,7 +5,7 @@ class tokenType(Enum):
     keyword = "keyword"
     globalKeyword = "globalKeyword"
     separator = "separator"
-    operator = "operator"
+    immed = "immed"
     register = "register"
     literal = "literal"
     directive = "directive"

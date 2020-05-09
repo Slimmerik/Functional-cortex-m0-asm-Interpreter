@@ -8,7 +8,13 @@ class Lexer:
         pass
 
     def __str__(self):
-        pass
+        return "".join([": is_separator: ", str(self.is_separator(":"))," x is_separator: ", str(self.is_separator("x")), "\n",
+        ": is_identifier: ", str(self.is_identifier(":"))," r6 is_identifier: ", str(self.is_identifier("r6")), "\n",
+        ": is_keyword: ", str(self.is_keyword(":"))," pop is_keyword: ", str(self.is_keyword("pop")), "\n",
+        ": is_point_to: ", str(self.is_point_to(":")), " ='a' is_point_to: ", str(self.is_point_to("='a'")), "\n",
+        ": is_register: ", str(self.is_register(":")), " r5 is_register: ",str(self.is_register("r5")), "\n"
+        ": is_directive: ", str(self.is_directive(":")), " .qweqwe is_directive: ", str(self.is_directive(".qweqwe")), "\n"
+        ])
 
     @prt
     def string_from_file(self, file_location: str) -> str:
@@ -57,6 +63,13 @@ class Lexer:
             return False
 
     @prt
+    def is_immed(self, chunc: str) -> bool:
+        if re.match(r'#immed\d*', chunc):
+            return True
+        else:
+            return False
+
+    @prt
     def is_register(self, chunc: str, regList: list = None) -> bool:
         if regList == None:
             return self.is_register(chunc ,tokenType.registers.value)
@@ -74,23 +87,28 @@ class Lexer:
         else:
             return False
 
+    # takes chunc string and returns token dict
+    # <class 'dict'>:{'tokenType': <tokenType.directive: 'directive'>, 'value': '.cpu'}
     @prt
     def get_token(self, chunc: str) -> dict:
-
+        if self.is_immed(chunc):
+            return {"tokenType": tokenType.immed, "value": chunc}
         if self.is_keyword(chunc):
             return {"tokenType": tokenType.keyword, "value": chunc}
-        if self.is_directive(chunc):
+        elif self.is_directive(chunc):
             return {"tokenType": tokenType.directive, "value": chunc}
-        if self.is_register(chunc):
+        elif self.is_register(chunc):
             return {"tokenType": tokenType.register, "value": chunc}
-        if self.is_point_to(chunc):
+        elif self.is_point_to(chunc):
             return {"tokenType": tokenType.point_to, "value": chunc}
-        if self.is_separator(chunc):
+        elif self.is_separator(chunc):
             return {"tokenType": tokenType.separator, "value": chunc}
-        if self.is_identifier(chunc):
+        elif self.is_identifier(chunc):
             return {"tokenType": tokenType.identifier, "value": chunc}
         return {"tokenType": None, "value": chunc}
 
+    # Takes string and outputs list of dicts with tokenTypes and value
+    # <class 'list'>:[<class 'dict'>: {'tokenType': <tokenType.directive: 'directive'>, 'value': '.cpu'}]
     @prt
     def Token_list_from_program(self, programStrng: str, tempString: str = "", tokenList: list = []) -> list:
         if len(programStrng) == 0:

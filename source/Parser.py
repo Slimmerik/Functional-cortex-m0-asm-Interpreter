@@ -16,18 +16,26 @@ class directiveNode(ASTnode):
         self.value = val
         self.next = nxt
     def __str__(self):
-        pass
+        return "".join("Name: ", self.nme, " Arguments: ", self.value, " Next: ", self.next)
 
 class instructionNode(ASTnode):
     def __init__(self, name: str, args: list):
         super().__init__( name)
         self.arguments = args
     def __str__(self):
-        pass
+        return "".join("Name: ", self.name, " Arguments: ", self.arguments)
 
 class Parser:
     def __init__(self):
         pass
+    def __str__(self):
+        return "idk"
+
+
+    # Takes tokenType list and bool list of block seperators positions outpurt a dict with code block aa only label
+    # direcListLoc <class 'list'>: [False,  False, True, False, False...
+    # s <class 'list'>:[<class 'dict'>: {'tokenType': <tokenType.directive: 'directive'>, 'value': '.cpu'}]
+    # return <class 'dict'>: {'codeblock': [<source.Parser.directiveNode object at 0x03D9B550>, <source.Parser.directiveNode object at 0x03D9B290>, <source.Parser.directiveNode object at 0x03D9B7D0>]}
     @prt
     def eval_directive(self, s: list, direcListLoc: list, prod: dict = {}, index: int = 0) -> dict:
         if len(direcListLoc) < index+1:
@@ -47,6 +55,10 @@ class Parser:
         elif direcListLoc[index] is False:
             return self.eval_directive(s, direcListLoc, prod, index + 1)
 
+    # Takes tokenType list and bool list of block seperators positions outpurt a dict with code block aa only label
+    # blocklist <class 'list'>: [False,  False, True, False, False...
+    # s <class 'list'>:[<class 'dict'>: {'tokenType': <tokenType.directive: 'directive'>, 'value': '.cpu'}]
+    # return <class 'dict'>: {'conv_char': [<source.Parser.directiveNode object at 0x03D9B550>, <source.Parser.directiveNode object at 0x03D9B290>, <source.Parser.directiveNode object at 0x03D9B7D0>]}
     @prt
     def eval_code_block(self, s: list, blockListLoc: list, prod: dict = {}, index: int = 0, activeLabel: str = None) -> dict:
         if len(blockListLoc) < index + 1:
@@ -72,6 +84,9 @@ class Parser:
         elif blockListLoc[index] is True and activeLabel is not None:
             return self.eval_code_block(s, blockListLoc, {**prod, **{s[index - 1]["value"]: []}}, index + 1, s[index - 1]["value"])
 
+    # Takes tokenTypes list and outputs ast dict, every codeblock is a dict label even as the directives.
+    # Lists of codeblocks in dict are filled with {instructionNode}<source.Parser.instructionNode object at 0x01084650> or
+    # Lists of directive in dict are filled with {directiveNode}<source.Parser.directiveNode object at 0x04FCB6F0>
     @prt
     def make_ast_from_token_list(self, s: list,tempProd: dict = {}, pos: str = "start") -> dict:
         if pos is "start":

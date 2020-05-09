@@ -1,6 +1,7 @@
 from source.Lexer import Lexer
 from source.Parser import Parser
 from source.Wraps import prt
+import re
 
 
 class CortexM0AssemblerInterpreter:
@@ -11,22 +12,17 @@ class CortexM0AssemblerInterpreter:
 
         self.ast = self.pa.make_ast_from_token_list(self.le.Token_list_from_program(self.le.string_from_file(fileLoc)))
 
-        self.machine = {"r0": 0,"r1": 0,"r2": 0,"r3": 0,"r4": 0,"r5": 0,"r6": 0,"r7": 0,"r8": 0,"r9": 0,"r10": 0,"r11": 0, "r12": 0,
+        self.machine = {"r0": 0, "r1": 0, "r2": 0, "r3": 0, "r4": 0, "r5": 0, "r6": 0, "r7": 0, "r8": 0, "r9": 0,
+                        "r10": 0, "r11": 0, "r12": 0,
                         "Z": 0, "C": 0, "N": 0, "V": 0}
 
-        self.instructionDict = {"ldrb": self.ldrb,
-                                "cmp": self.cmp,
-                                "sub": self.sub,
-                                "add": self.add,
-                                "b": self.b,
-                                "ble": self.ble,
-                                "bge": self.bge,
-                                "ble": self.ble,
-                                "pop": self.pop,
-                                "push": self.push}
+        self.instructionDict = {"ldrb": self.ldrb, "cmp": self.cmp, "sub": self.sub, "add": self.add, "b": self.b,
+                                "bge": self.bge, "ble": self.ble, "pop": self.pop, "push": self.push}
 
     def __str__(self):
-        pass
+        return "".join([str(self.machine), "\n",
+                        str(self.ast)]
+                       )
 
     @prt
     def ldrb(self, machine: dict, args: list, execList: list) -> tuple:
@@ -40,11 +36,18 @@ class CortexM0AssemblerInterpreter:
 
     @prt
     def sub(self, machine: dict, args: list, execList: list) -> tuple:
-        return {**machine,**{args[0]: int(machine[args[1]]) - int(machine[args[2]])}}, execList[1:]
+        return {**machine, **{args[0]: int(machine[args[1]]) - int(machine[args[2]])}}, execList[1:]
 
     @prt
     def add(self, machine: dict, args: list, execList: list) -> tuple:
-        return {**machine,**{args[0]: int(machine[args[1]]) + int(machine[args[2]])}}, execList[1:]
+        if re.match(r'#immed\d*', args[1]):
+            return {**machine, **{args[0]: int(args[1][6:]) + int(machine[args[2]])}}, execList[1:]
+        elif re.match(r'#immed\d*', args[2]):
+            return {**machine, **{args[0]: int(machine[args[1]]) + int(args[2][6:])}}, execList[1:]
+        elif re.match(r'#immed\d*', args[1]) and re.match(r'#immed\d*', args[2]):
+            return {**machine, **{args[0]: int(args[1][6:]) + int(args[2][6:])}}, execList[1:]
+        else:
+            return {**machine, **{args[0]: int(machine[args[1]]) + int(machine[args[2]])}}, execList[1:]
 
     @prt
     def b(self, machine: dict, args: list, execList: list) -> tuple:
@@ -80,14 +83,16 @@ class CortexM0AssemblerInterpreter:
         if execList is None:
             return self.cycle_ast_nodes(ast, machine, ast[machine[".global"]])
         elif execList is not None and len(execList) > 0:
-            return self.cycle_ast_nodes(ast, *self.instructionDict[execList[0].name](machine, execList[0].arguments, execList))
+            return self.cycle_ast_nodes(ast, *self.instructionDict[execList[0].name](machine, execList[0].arguments,
+                                                                                     execList))
         elif len(execList) is 0:
             return machine
 
     @prt
-    def run_funtion(self,funName: str, value: int, machine: dict = None,  state: str = "direc") -> str:
+    def run_funtion(self, funName: str, value: int, machine: dict = None, state: str = "direc") -> str:
         if state is "direc":
-            return self.run_funtion(funName, value, self.handle_directive(self.ast, {**self.machine,**{"r0": value}}), "cycle")
+            return self.run_funtion(funName, value, self.handle_directive(self.ast, {**self.machine, **{"r0": value}}),
+                                    "cycle")
         elif state is "cycle" and funName == machine[".global"]:
             return self.run_funtion(funName, value, self.cycle_ast_nodes(self.ast, machine), "return")
         elif state is "return":
